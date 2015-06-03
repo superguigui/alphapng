@@ -1,6 +1,6 @@
 {
   "name": "alphapng",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Very minimal cli tool to separate alpha and rgb channels from a transparent png file.",
   "main": "index.js",
   "scripts": {},

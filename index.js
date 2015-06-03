@@ -72,7 +72,7 @@ rstream
   .pipe(new JPEGEncoder({quality: quality}))
   .pipe(fs.createWriteStream(outputFileJpgPath))
   .on('close', function() {
-    console.log(chalk.blue('alphapng'), 'saved rgb channels to', chalk.blue(outputFileJpgPath), 'with quality', chalk.blue(quality));
+    console.log(chalk.blue('alphapng'), chalk.gray('saved rgb channels to'), chalk.white(outputFileJpgPath), chalk.gray('with quality'), chalk.white(quality));
   });
 
 rstream
@@ -81,5 +81,5 @@ rstream
   .pipe(new PNGEncoder())
   .pipe(fs.createWriteStream(outputFilePngPath))
   .on('close', function() {
-    console.log(chalk.blue('alphapng'), 'saved alpha channel to', chalk.blue(outputFilePngPath))
+    console.log(chalk.blue('alphapng'), chalk.gray('saved alpha channel to'), chalk.white(outputFilePngPath))
   });
