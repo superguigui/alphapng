@@ -5,8 +5,11 @@
 var chalk = require('chalk');
 var argv = require('minimist')(process.argv.slice(2));
 var fs = require('fs');
-var gm = require('gm');
-var Png = require('pngjs').PNG;
+var PNGDecoder = require('png-stream/decoder');
+var PNGEncoder = require('png-stream/encoder');
+var JPEGEncoder = require('jpg-stream/encoder');
+var RgbaToRgb = require('./lib/rgbaToRgb');
+var ExtractAlpha = require('./lib/extractAlpha');
 var version = require('./package.json').version;
 
 /* --------------------------------------------------------------------
@@ -50,7 +53,6 @@ function showVersion() {
   console.log(version);
 }
 
-
 /* --------------------------------------------------------------------
   Check inputs
 -------------------------------------------------------------------- */
@@ -58,31 +60,26 @@ if (!inputFilePath) return showError('You need to provide an input png file, ex:
 if (isVersionRequested) return showVersion();
 if (isHelpNeeded) return showHelp();
 
+
 /* --------------------------------------------------------------------
   Start
 -------------------------------------------------------------------- */
 var rstream = fs.createReadStream(inputFilePath);
 
-gm(rstream).compress('JPEG').quality(quality).write(outputFileJpgPath, function(err) {
-  if (!err) {
-    console.log(chalk.blue('alphapng'), 'saved rgb channels to', chalk.blue(outputFileJpgPath), 'at quality', chalk.blue(quality));
-  }
-});
+rstream
+  .pipe(new PNGDecoder)
+  .pipe(new RgbaToRgb())
+  .pipe(new JPEGEncoder({quality: quality}))
+  .pipe(fs.createWriteStream(outputFileJpgPath))
+  .on('close', function() {
+    console.log(chalk.blue('alphapng'), 'saved rgb channels to', chalk.blue(outputFileJpgPath), 'with quality', chalk.blue(quality));
+  });
 
 rstream
-  .pipe(new Png({
-    filterType: 4
-  }))
-  .on('parsed', function() {
-    var x, y, i;
-    for (y = 0; y < this.height; y++) {
-      for (x = 0; x < this.width; x++) {
-        i = (this.width * y + x) << 2;
-        this.data[i + 0] = 0;
-        this.data[i + 1] = 0;
-        this.data[i + 2] = 0;
-      }
-    }
-    this.pack().pipe(fs.createWriteStream(outputFilePngPath));
-    console.log(chalk.blue('alphapng'), 'saved alpha channel to', chalk.blue(outputFilePngPath));
+  .pipe(new PNGDecoder)
+  .pipe(new ExtractAlpha())
+  .pipe(new PNGEncoder())
+  .pipe(fs.createWriteStream(outputFilePngPath))
+  .on('close', function() {
+    console.log(chalk.blue('alphapng'), 'saved alpha channel to', chalk.blue(outputFilePngPath))
   });
