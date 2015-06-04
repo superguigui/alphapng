@@ -22,6 +22,7 @@ var isHelpNeeded = argv.h || argv.help || false;
 var isVersionRequested = argv.v || argv.version || false;
 var outputFilePngPath = outputFileName + '.png';
 var outputFileJpgPath = outputFileName + '.jpg';
+var nbTasks = 2;
 
 /* --------------------------------------------------------------------
   Some Methods (impures, need to be refactored to be moved to lib)
@@ -53,6 +54,21 @@ function showVersion() {
   console.log(version);
 }
 
+function taskOver() {
+  nbTasks--;
+  if (!nbTasks) {
+    console.log(
+      chalk.blue('alphapng'),
+      chalk.gray('saved rgb channels to'),
+      chalk.white(outputFileJpgPath),
+      chalk.gray('with quality'),
+      chalk.white(quality),
+      chalk.gray('and alpha channel to'),
+      chalk.white(outputFilePngPath)
+    );
+  }
+}
+
 /* --------------------------------------------------------------------
   Check inputs
 -------------------------------------------------------------------- */
@@ -71,15 +87,11 @@ rstream
   .pipe(new RgbaToRgb())
   .pipe(new JPEGEncoder({quality: quality}))
   .pipe(fs.createWriteStream(outputFileJpgPath))
-  .on('close', function() {
-    console.log(chalk.blue('alphapng'), chalk.gray('saved rgb channels to'), chalk.white(outputFileJpgPath), chalk.gray('with quality'), chalk.white(quality));
-  });
+  .on('close', taskOver);
 
 rstream
   .pipe(new PNGDecoder)
   .pipe(new ExtractAlpha())
   .pipe(new PNGEncoder())
   .pipe(fs.createWriteStream(outputFilePngPath))
-  .on('close', function() {
-    console.log(chalk.blue('alphapng'), chalk.gray('saved alpha channel to'), chalk.white(outputFilePngPath))
-  });
+  .on('close', taskOver);
